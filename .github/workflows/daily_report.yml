@@ -1,0 +1,29 @@
+name: Daily OpenRouter Report
+
+on:
+  schedule:
+    - cron: "0 18 * * *"
+  workflow_dispatch:        # możliwość ręcznego uruchomienia z panelu GitHub
+
+jobs:
+  send-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run monitor
+        env:
+          SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+          OPENROUTER_KEY: ${{ secrets.OPENROUTER_KEY }}
+          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+        run: python monitor.py
