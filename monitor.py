@@ -113,7 +113,7 @@ def main():
     if remaining < 2.0:
         message += "\n\n🔴 *ALARM: Mało środków!*"
     print(message)
-    # send_slack_msg(message)
+    send_slack_msg(message)
     logging.info(f"Koniec. Pozostało: ${remaining:.2f}, Zużycie: ${total_usage:.4f}")
 
 
