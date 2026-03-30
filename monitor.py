@@ -1,7 +1,6 @@
 import requests
 import os
 import logging
-from datetime import datetime, timedelta
 
 # --- KONFIGURACJA ---
 SLACK_TOKEN = os.environ["SLACK_TOKEN"]
@@ -51,12 +50,12 @@ def get_credits():
 
 
 def get_keys():
-    """Returns list of active keys with non-zero weekly usage."""
+    """Returns list of keys with non-zero daily usage."""
     try:
         resp = requests.get("https://openrouter.ai/api/v1/keys", headers=HEADERS)
         if resp.status_code == 200:
             keys = resp.json().get("data", [])
-            return [k for k in keys if (k.get("usage_weekly") or 0) > 0]
+            return [k for k in keys if (k.get("usage_daily") or 0) > 0]
         logging.error(f"Błąd keys: {resp.text}")
     except Exception as e:
         logging.error(f"Wyjątek keys: {e}")
@@ -89,15 +88,9 @@ def main():
 
     remaining = total_credits - total_usage
 
-    today = datetime.now().date()
-    days = [today - timedelta(days=i) for i in range(1, 4)]
-
-    daily_lines = []
-    for day in days:
-        usage = get_daily_usage(day.strftime("%Y-%m-%d"))
-        daily_lines.append(f"  • {day.strftime('%d.%m.%Y')}: *${usage:.4f}*")
-
     keys = get_keys()
+    today_total = sum(k.get("usage_daily") or 0 for k in keys) if keys else 0
+
     key_lines = []
     for k in keys:
         name = k["name"]
@@ -107,11 +100,11 @@ def main():
         limit_str = f" | limit: ${limit:.2f}" if limit else " | bez limitu"
         key_lines.append(f"  • *{name}*: dziś ${daily:.4f} | tydzień ${weekly:.4f}{limit_str}")
 
-    keys_section = "\n🔑 Zużycie per klucz (ostatni tydzień):\n" + "\n".join(key_lines) if key_lines else ""
+    keys_section = "\n🔑 Zużycie per klucz (dzisiaj):\n" + "\n".join(key_lines) if key_lines else ""
 
     message = (
         f"📊 Raport OpenRouter\n\n"
-        f"Zużycie z ostatnich 3 dni:\n" + "\n".join(daily_lines) + "\n"
+        f"💵 Zużycie dzisiaj: *${today_total:.4f}*\n"
         + keys_section + "\n\n"
         f"💰 Pozostałe środki: *${remaining:.2f}*\n"
         f"📈 Całkowite zużycie: *${total_usage:.4f}*"
@@ -120,7 +113,7 @@ def main():
     if remaining < 2.0:
         message += "\n\n🔴 *ALARM: Mało środków!*"
     print(message)
-    send_slack_msg(message)
+    # send_slack_msg(message)
     logging.info(f"Koniec. Pozostało: ${remaining:.2f}, Zużycie: ${total_usage:.4f}")
 
 

@@ -2,7 +2,7 @@ name: Daily OpenRouter Report
 
 on:
   schedule:
-    - cron: "0 18 * * *"
+    - cron: "0 22 * * *"
   workflow_dispatch:        # możliwość ręcznego uruchomienia z panelu GitHub
 
 jobs:
